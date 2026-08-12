@@ -1,11 +1,21 @@
 const crypto = require('crypto');
 
-// Токен сессии — это HMAC от секрета проекта. Секретом служит
-// BLOB_READ_WRITE_TOKEN, который Vercel и так автоматически создаёт
-// при подключении Blob-хранилища, так что отдельный секрет не нужен.
+// Пароль для входу в адмінку. Захований у коді (не показується в
+// браузері й не потрапляє на клієнт — перевіряється лише на сервері).
+// Щоб змінити пароль пізніше: відредагуйте рядок нижче і задеплойте
+// сайт ще раз (vercel --prod).
+const ADMIN_PASSWORD = 'Krok-9735!';
+
+// Окремий секрет для підпису cookie сесії. Ніде не показується,
+// міняти його не обов'язково.
+const SESSION_SECRET = 'f3b7c9a1-shoe-catalog-session-secret-2026';
+
 function expectedToken() {
-  const secret = process.env.BLOB_READ_WRITE_TOKEN || 'dev-secret';
-  return crypto.createHmac('sha256', secret).update('admin-session').digest('hex');
+  return crypto.createHmac('sha256', SESSION_SECRET).update('admin-session').digest('hex');
+}
+
+function checkPassword(pw) {
+  return typeof pw === 'string' && pw === ADMIN_PASSWORD;
 }
 
 function parseCookies(req) {
@@ -25,4 +35,4 @@ function isAdmin(req) {
   return Boolean(cookies.admin_token) && cookies.admin_token === expectedToken();
 }
 
-module.exports = { expectedToken, parseCookies, isAdmin };
+module.exports = { expectedToken, checkPassword, parseCookies, isAdmin };
